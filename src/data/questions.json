@@ -1,0 +1,28 @@
+{
+	"questions": [
+		{
+			"question": "Какой язык программирования лучше?",
+			"answers": [
+				{ "text": "Python", "rating": 10 },
+				{ "text": "JavaScript", "rating": 8 },
+				{ "text": "C++", "rating": 7 }
+			]
+		},
+		{
+			"question": "Какая операционная система вам нравится больше?",
+			"answers": [
+				{ "text": "Windows", "rating": 6 },
+				{ "text": "macOS", "rating": 9 },
+				{ "text": "Linux", "rating": 12 }
+			]
+		},
+    {
+			"question": "Какая операционная система вам нравится больше?",
+			"answers": [
+				{ "text": "Windows", "rating": 6 },
+				{ "text": "macOS", "rating": 9 },
+				{ "text": "Linux", "rating": 12 }
+			]
+		}
+	]
+}

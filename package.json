@@ -1,0 +1,15 @@
+{
+	"name": "telegram_tester",
+	"version": "1.0.0",
+	"main": "index.js",
+	"type": "module",
+	"scripts": {
+		"dev": "nodemon src/index.js",
+		"start": "node src/index.js"
+	},
+	"license": "MIT",
+	"dependencies": {
+		"dotenv": "^16.4.7",
+		"node-telegram-bot-api": "^0.66.0"
+	}
+}
