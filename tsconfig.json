@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "ES2015", // Целевая версия ECMAScript
+		"module": "CommonJS", // Формат модулей
+		"outDir": "./dist", // Папка для скомпилированных файлов
+		"rootDir": "./src", // Исходная папка с кодом
+		"strict": true, // Включить строгий режим проверки типов
+		"esModuleInterop": true, // Поддержка импорта ES-модулей
+		"skipLibCheck": true, // Пропускать проверку библиотек
+		"forceConsistentCasingInFileNames": true, // Проверять регистр имен файлов
+		"noEmit": true, // Не генерировать файлы
+		"allowImportingTsExtensions": true // Разрешить импортировать файлы с расширением .ts
+	},
+	"include": [
+		"src/**/*" // Включает все файлы из папки src и её подкаталогов
+	]
+}

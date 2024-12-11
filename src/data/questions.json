@@ -1,27 +1,27 @@
 {
-	"questions": [
+	"data": [
 		{
 			"question": "Какой язык программирования лучше?",
 			"answers": [
-				{ "text": "Python", "rating": 10 },
-				{ "text": "JavaScript", "rating": 8 },
-				{ "text": "C++", "rating": 7 }
+				{ "text": "Python", "rating": 20 },
+				{ "text": "JavaScript", "rating": 27 },
+				{ "text": "C++", "rating": 15 }
 			]
 		},
 		{
 			"question": "Какая операционная система вам нравится больше?",
 			"answers": [
-				{ "text": "Windows", "rating": 6 },
-				{ "text": "macOS", "rating": 9 },
-				{ "text": "Linux", "rating": 12 }
+				{ "text": "Windows", "rating": 10 },
+				{ "text": "macOS", "rating": 3 },
+				{ "text": "Linux", "rating": 6 }
 			]
 		},
-    {
-			"question": "Какая операционная система вам нравится больше?",
+		{
+			"question": "Настоящее имя Wo0zZ1:",
 			"answers": [
-				{ "text": "Windows", "rating": 6 },
-				{ "text": "macOS", "rating": 9 },
-				{ "text": "Linux", "rating": 12 }
+				{ "text": "Дима", "rating": 3 },
+				{ "text": "Артем", "rating": 1 },
+				{ "text": "Максим", "rating": 10 }
 			]
 		}
 	]
