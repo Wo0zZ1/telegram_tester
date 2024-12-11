@@ -41,3 +41,21 @@ npm run start
 ---
 
 # It's Done! 🎉
+
+## How do I update a project to a new version?
+
+With yarn:
+
+```bash
+git pull
+yarn
+```
+
+or with npm:
+
+```bash
+git pull
+npm install
+```
+
+Now, return to the step 4 😉
