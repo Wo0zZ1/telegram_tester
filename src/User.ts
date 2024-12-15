@@ -165,6 +165,11 @@ export class User implements IUser {
 	}
 
 	async startTest() {
+		if (this.testCompleted) {
+			return await this.sendMessage(
+				`Тест уже пройден! Твой рейтинг: ${this.currentRating}`,
+			)
+		}
 		if (this.verified) {
 			await this.sendMessage(
 				`Привет, ${
