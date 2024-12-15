@@ -1,9 +1,10 @@
+import { bot } from './bot'
 import { App } from './main'
 import { IMessageHandler } from './types'
 
 const messageHandlers: IMessageHandler[] = [
 	function (msg) {
-		if (msg.text === 'ping') this.sendMessage(msg.chat.id, 'pong')
+		if (msg.text === 'ping') bot.sendMessage(msg.chat.id, 'pong')
 	},
 ]
 

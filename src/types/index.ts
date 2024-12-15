@@ -1,6 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api'
 
-export type chatId = number | string
+export type userId = number | string
 
 export type userName = {
 	firstName: string
@@ -19,8 +19,8 @@ export interface ICallback {
 }
 
 export interface ICallbackAnswer extends ICallback {
-	selectedAnswerIndex: number
-	rating: number
+	questionIndex: number
+	selectedIndex: number
 }
 
 export interface ICallbackResult extends ICallback {}

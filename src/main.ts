@@ -15,13 +15,13 @@ import TelegramBot from 'node-telegram-bot-api'
 
 config()
 
-const adminChatId = process.env.ADMIN_CHAT_ID!
-// console.log(adminChatId) // Admin ID
+const adminuserId = process.env.ADMIN_CHAT_ID!
+// console.log(adminuserId) // Admin ID
 
 export interface IApp {
 	userManager: UserManager
 	_registerEventListeners(messageHandlers: IMessageHandler[]): void
-	registerEvent(
+	registerOnEvent(
 		type: keyof TelegramEvents,
 		handler: IMessageHandler,
 	): void
@@ -44,7 +44,7 @@ export class App implements IApp {
 
 	_registerEventListeners(messageHandlers: IMessageHandler[]) {
 		messageHandlers.forEach(handler =>
-			this.registerEvent('message', handler),
+			this.registerOnEvent('message', handler),
 		)
 
 		bot.setMyCommands([
@@ -56,29 +56,31 @@ export class App implements IApp {
 		])
 
 		bot.onText(/\/start/, msg => {
-			const chatId = msg.chat.id
-			const currentUser = this.userManager.createUser(chatId)
+			const userId = msg.from?.id
+			if (!userId) return
+			const currentUser = this.userManager.createUser(userId)
 			currentUser.startTest()
 		})
 
 		bot.onText(/\/info/, msg => {
-			const chatId = msg.chat.id
-			const currentUser = this.userManager.createUser(chatId)
+			const userId = msg.from?.id
+			if (!userId) return
+			const currentUser = this.userManager.createUser(userId)
 			currentUser.sendMessage(
 				'Данный бот предназначен для прохождения тестирования. Введите комманду /start для начала теста',
 			)
 		})
 
-		bot.on('message', msg => {
-			const chatId = msg.chat.id
-			const user = this.userManager.getUser(chatId)
-			if (!user || !msg?.text) return
+		bot.on('text', msg => {
+			if (msg.chat.type !== 'private') return
+			const userId = msg.from?.id
+			if (!userId || !msg.text) return
+			const user = this.userManager.getUser(userId)
+			if (!user) return
 			user.onMessage(msg)
 		})
 
 		bot.on('callback_query', async query => {
-			// console.log(query)
-
 			if (!query?.data) return
 			const dataType = (JSON.parse(query.data) as ICallback).type
 
@@ -138,17 +140,17 @@ export class App implements IApp {
 		})
 	}
 
-	registerEvent(
+  registerOnEvent(
 		type: keyof TelegramEvents,
 		handler: IMessageHandler,
 	) {
-		bot.on(type, handler.bind(bot))
+		bot.on(type, handler)
 	}
 
 	async sendMessageToOwner(
 		message: string,
 		options?: SendMessageOptions,
 	) {
-		await bot.sendMessage(adminChatId, message, options)
+		await bot.sendMessage(adminuserId, message, options)
 	}
 }

@@ -1,35 +1,35 @@
-import type { chatId, userName } from './types/index'
+import type { userId, userName } from './types/index'
 import { User } from './User'
 
 interface IUserManager {
-	users: { [chatId: string]: User }
-	createUser(chatId: chatId, name: userName | undefined): User
-	getUser(chatId: chatId): User | undefined
-	deleteUser(chatId: chatId): User
+	users: { [userId: string]: User }
+	createUser(userId: userId, name: userName | undefined): User
+	getUser(userId: userId): User | undefined
+	deleteUser(userId: userId): User
 }
 
 export class UserManager implements IUserManager {
-	users: { [chatId: string]: User }
+	users: { [userId: string]: User }
 
 	constructor() {
 		// Хранилище состояний пользователей
 		this.users = {}
 	}
 
-	createUser(chatId: chatId, name?: userName) {
-		const currentUser = this.getUser(chatId)
+	createUser(userId: userId, name?: userName) {
+		const currentUser = this.getUser(userId)
 		if (currentUser !== undefined) return currentUser
-		return (this.users[chatId] = new User(chatId, name))
+		return (this.users[userId] = new User(userId, name))
 	}
 
-	getUser(chatId: chatId) {
-		if (!this.users[chatId]) return undefined
-		return this.users[chatId]
+	getUser(userId: userId) {
+		if (!this.users[userId]) return undefined
+		return this.users[userId]
 	}
 
-	deleteUser(chatId: chatId) {
-		const deletedUser = this.users[chatId]
-		delete this.users[chatId]
+	deleteUser(userId: userId) {
+		const deletedUser = this.users[userId]
+		delete this.users[userId]
 		return deletedUser
 	}
 }

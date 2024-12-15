@@ -1,11 +1,11 @@
 import TelegramBot from 'node-telegram-bot-api'
-import { chatId, ICallbackAnswer, userName } from './types/index'
+import { userId, ICallbackAnswer, userName } from './types/index'
 import { questions, type IQuestion } from './data/types'
 import { SendMessageOptions } from 'node-telegram-bot-api'
 import { bot } from './bot'
 
 export interface IUser {
-	chatId: chatId
+	userId: userId
 	name: userName | undefined
 	currentIndex: number
 	currentRating: number
@@ -28,7 +28,7 @@ export interface IUser {
 }
 
 export class User implements IUser {
-	chatId
+	userId
 	name
 	verified
 	testCompleted
@@ -39,8 +39,8 @@ export class User implements IUser {
 	durationTime
 
 	// TODO Name
-	constructor(chatId: chatId, name?: userName) {
-		this.chatId = chatId
+	constructor(userId: userId, name?: userName) {
+		this.userId = userId
 		this.name = name
 		this.verified = false
 		this.testCompleted = false
@@ -52,40 +52,44 @@ export class User implements IUser {
 	}
 
 	async sendMessage(message: string, options?: SendMessageOptions) {
-		await bot.sendMessage(this.chatId, message, options)
+		try {
+			await bot.sendMessage(this.userId, message, options)
+		} catch (error) {
+			console.error(error)
+		}
 	}
 
 	async sendNextQuestion() {
-		if (!this.verified) return
-		const question = this.getCurrentQuestion()
+		try {
+			if (!this.verified) return
+			const question = this.getCurrentQuestion()
 
-		let message = `<b>${question.question}</b>\n\n`
+			let message = `<b>${question.question}</b>\n\n`
 
-		question.answers.map((answer, index) => {
-			message += `${index + 1}. ${answer.text}\n`
-		})
+			question.answers.map((answer, index) => {
+				message += `${index + 1}. ${answer.text}\n`
+			})
 
-		const callbackData: ICallbackAnswer[] = question.answers.map(
-			(a, index) => ({
-				type: 'answer',
-				selectedAnswerIndex: index,
-				rating: a.rating,
-			}),
-		)
+			const options: SendMessageOptions = {
+				parse_mode: 'HTML',
+				reply_markup: {
+					inline_keyboard: [
+						question.answers.map((_, index) => ({
+							text: `${index + 1}`,
+							callback_data: JSON.stringify({
+								type: 'answer',
+								questionIndex: this.currentIndex,
+								selectedIndex: index,
+							}),
+						})),
+					],
+				},
+			}
 
-		const options: SendMessageOptions = {
-			parse_mode: 'HTML',
-			reply_markup: {
-				inline_keyboard: [
-					question.answers.map((_, index) => ({
-						text: `${index + 1}`,
-						callback_data: JSON.stringify(callbackData[index]),
-					})),
-				],
-			},
+			await this.sendMessage(message, options)
+		} catch (error) {
+			console.error(error)
 		}
-
-		await this.sendMessage(message, options)
 	}
 
 	getCurrentQuestion() {
@@ -97,22 +101,33 @@ export class User implements IUser {
 	}
 
 	async checkAnswer(data: ICallbackAnswer) {
-		if (this.currentIndex >= questions.length) return
+		try {
+			if (
+				data.questionIndex !== this.currentIndex ||
+				this.currentIndex >= questions.length
+			)
+				return
 
-		// Накапливаем рейтинг
-		this.incrementRating(data.rating)
-		// Переходим к следующему вопросу
-		this.currentIndex++
+			// Накапливаем рейтинг
+			this.incrementRating(
+				questions[data.questionIndex].answers[data.selectedIndex]
+					.rating,
+			)
+			// Переходим к следующему вопросу
+			this.currentIndex++
 
-		if (this.currentIndex < questions.length) {
-			this.sendNextQuestion()
-			return
+			if (this.currentIndex < questions.length) {
+				this.sendNextQuestion()
+				return
+			}
+
+			// Тест завершен, отправляем результат
+			this.testCompleted = true
+			await this.finishTest()
+			return this.currentRating
+		} catch (error) {
+			console.error(error)
 		}
-
-		// Тест завершен, отправляем результат
-		this.testCompleted = true
-		await this.finishTest()
-		return this.currentRating
 	}
 
 	async checkFIO(text: string) {
