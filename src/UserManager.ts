@@ -1,31 +1,29 @@
-import TelegramBot from 'node-telegram-bot-api'
-import { User } from './User.ts'
-import type { chatId } from './types/index.ts'
+import type { chatId, userName } from './types/index'
+import { User } from './User'
 
 interface IUserManager {
-	bot: TelegramBot
 	users: { [chatId: string]: User }
-	createUser(chatId: chatId, name: string): void
-	getUser(chatId: chatId): User | null
+	createUser(chatId: chatId, name: userName | undefined): User
+	getUser(chatId: chatId): User | undefined
 	deleteUser(chatId: chatId): User
 }
 
 export class UserManager implements IUserManager {
 	users: { [chatId: string]: User }
-	bot: TelegramBot
 
-	constructor(bot: TelegramBot) {
-		this.bot = bot
-		this.users = {} // Хранилище состояний пользователей
+	constructor() {
+		// Хранилище состояний пользователей
+		this.users = {}
 	}
 
-	createUser(chatId: chatId, name: string) {
-		if (this.getUser(chatId) instanceof User) this.deleteUser(chatId)
-		return (this.users[chatId] = new User(this.bot, chatId, name))
+	createUser(chatId: chatId, name?: userName) {
+		const currentUser = this.getUser(chatId)
+		if (currentUser !== undefined) return currentUser
+		return (this.users[chatId] = new User(chatId, name))
 	}
 
 	getUser(chatId: chatId) {
-		if (!this.users[chatId]) return null
+		if (!this.users[chatId]) return undefined
 		return this.users[chatId]
 	}
 

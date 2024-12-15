@@ -14,8 +14,13 @@ export type IMessageHandler = (
 	msg: TelegramBot.Message,
 ) => void
 
-export interface ICallbackData {
-  type: string
-  selectedAnswerIndex: number
-  rating: number
+export interface ICallback {
+	type: string
 }
+
+export interface ICallbackAnswer extends ICallback {
+	selectedAnswerIndex: number
+	rating: number
+}
+
+export interface ICallbackResult extends ICallback {}

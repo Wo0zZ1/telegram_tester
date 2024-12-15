@@ -5,7 +5,7 @@
 		"outDir": "./dist", // Папка для скомпилированных файлов
 		"rootDir": "./src", // Исходная папка с кодом
 		"strict": true, // Включить строгий режим проверки типов
-		"esModuleInterop": true, // Поддержка импорта ES-модулей
+		"esModuleInterop": true, // Поддержка импорта ES-модулей в CommonJS
 		"skipLibCheck": true, // Пропускать проверку библиотек
 		"forceConsistentCasingInFileNames": true, // Проверять регистр имен файлов
 		"noEmit": true, // Не генерировать файлы

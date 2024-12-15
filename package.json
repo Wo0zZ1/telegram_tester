@@ -5,9 +5,8 @@
 	"type": "commonjs",
 	"scripts": {
 		"dev": "nodemon src/index.ts",
-		"start": "node dist/main.js",
-		"build": "tsc",
-		"lint": "eslint ."
+		"start": "node src/index.js",
+		"build": "tsc src/index.ts"
 	},
 	"license": "MIT",
 	"dependencies": {

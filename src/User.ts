@@ -1,16 +1,17 @@
-import TelegramBot, {
-	SendMessageOptions,
-} from 'node-telegram-bot-api'
-import { chatId, ICallbackData } from './types/index.ts'
-import { questions, type IQuestion } from './data/types.ts'
+import TelegramBot from 'node-telegram-bot-api'
+import { chatId, ICallbackAnswer, userName } from './types/index'
+import { questions, type IQuestion } from './data/types'
+import { SendMessageOptions } from 'node-telegram-bot-api'
+import { bot } from './bot'
 
 export interface IUser {
-	bot: TelegramBot
 	chatId: chatId
-	// TODO Name
-	name: string
+	name: userName | undefined
 	currentIndex: number
 	currentRating: number
+	verified: boolean
+	startTime: number
+	durationTime: number
 	sendMessage(
 		message: string,
 		options?: TelegramBot.SendMessageOptions,
@@ -18,34 +19,44 @@ export interface IUser {
 	sendNextQuestion(): void
 	getCurrentQuestion(questions: IQuestion[]): IQuestion
 	incrementRating(rating: number): number
-	checkAnswer(data: ICallbackData): number | null
+	checkAnswer(data: ICallbackAnswer): Promise<number | undefined>
+	finishTest(): void
+	checkFIO(text: string): void
+	onMessage(msg: TelegramBot.Message): void
+	startTest(): void
 	startTest(): void
 }
 
 export class User implements IUser {
-	bot
 	chatId
 	name
+	verified
+	testCompleted
 	currentIndex
 	currentRating
+	startTime
+	endTime
+	durationTime
 
 	// TODO Name
-	constructor(bot: TelegramBot, chatId: chatId, name: string) {
-		this.bot = bot
+	constructor(chatId: chatId, name?: userName) {
 		this.chatId = chatId
 		this.name = name
+		this.verified = false
+		this.testCompleted = false
 		this.currentIndex = 0
 		this.currentRating = 0
+		this.startTime = 0
+		this.endTime = 0
+		this.durationTime = 0
 	}
 
-	async sendMessage(
-		message: string,
-		options?: TelegramBot.SendMessageOptions,
-	) {
-		await this.bot.sendMessage(this.chatId, message, options)
+	async sendMessage(message: string, options?: SendMessageOptions) {
+		await bot.sendMessage(this.chatId, message, options)
 	}
 
 	async sendNextQuestion() {
+		if (!this.verified) return
 		const question = this.getCurrentQuestion()
 
 		let message = `<b>${question.question}</b>\n\n`
@@ -54,7 +65,7 @@ export class User implements IUser {
 			message += `${index + 1}. ${answer.text}\n`
 		})
 
-		const callbackData: ICallbackData[] = question.answers.map(
+		const callbackData: ICallbackAnswer[] = question.answers.map(
 			(a, index) => ({
 				type: 'answer',
 				selectedAnswerIndex: index,
@@ -85,8 +96,8 @@ export class User implements IUser {
 		return (this.currentRating += rating)
 	}
 
-	checkAnswer(data: ICallbackData) {
-		if (this.currentIndex >= questions.length) return null
+	async checkAnswer(data: ICallbackAnswer) {
+		if (this.currentIndex >= questions.length) return
 
 		// Накапливаем рейтинг
 		this.incrementRating(data.rating)
@@ -95,24 +106,74 @@ export class User implements IUser {
 
 		if (this.currentIndex < questions.length) {
 			this.sendNextQuestion()
-			return null
+			return
 		}
 
 		// Тест завершен, отправляем результат
-		this.finishTest()
+		this.testCompleted = true
+		await this.finishTest()
 		return this.currentRating
 	}
 
-	async finishTest() {
-		await this.sendMessage(
-			`Тест завершён! Ваш общий рейтинг: ${this.currentRating}`,
+	async checkFIO(text: string) {
+		if (/^([А-яA-z]+ ){3}[^ ]+$/.test(text)) {
+			const [lastName, firstName, middleName, group] = text.split(' ')
+			this.name = { lastName, firstName, middleName, group }
+			this.verified = true
+			await this.sendMessage(
+				`Спасибо, ${firstName}! Теперь начнем тестирование!`,
+			)
+			await this.sendNextQuestion()
+		} else {
+			await this.sendMessage(
+				'Неверный формат!\n\nПожалуйста, введи ФИО и группу через пробел (например: Иванов Иван Иванович ИТ-21):',
+			)
+		}
+	}
+
+	async onMessage(msg: TelegramBot.Message) {
+		// If msg is command - skip
+		if (
+			(await bot.getMyCommands()).find(
+				command => '/' + command.command === msg.text,
+			)
 		)
-		// TODO analytics
+			return
+		// If not verified - check FIO
+		if (!this.verified) return await this.checkFIO(msg?.text || '')
+		// If verified - send message
+		return await this.sendMessage(
+			`${
+				this.name!.firstName
+			}, ты должен ответить на вопрос, нажав на одну из кнопок под сообщением!`,
+		)
 	}
 
 	async startTest() {
-		await this.sendMessage('Привет! Давай начнем тестирование!')
-		// TODO ФИОГ
-		await this.sendNextQuestion()
+		if (this.verified) {
+			await this.sendMessage(
+				`Привет, ${
+					this.name!.firstName
+				}! Пройди тест до конца, чтобы узнать свой рейтинг!`,
+			)
+			return this.sendNextQuestion()
+		}
+		this.startTime = Date.now()
+		await this.sendMessage('Привет! Для начала давай познакомимся!')
+		await this.sendMessage(
+			'Введи ФИО и группу через пробел (например: Иванов Иван Иванович ИТ-21):',
+		)
+	}
+
+	async finishTest() {
+		this.endTime = Date.now()
+		this.durationTime = this.endTime - this.startTime
+		await this.sendMessage(
+			`${
+				this.name!.firstName
+			}, спасибо за прохождение теста! Ваш общий рейтинг: ${
+				this.currentRating
+			}`,
+		)
 	}
 }
