@@ -9,9 +9,13 @@ import {
 	ICallbackAnswer,
 	ICallbackResult,
 	IMessageHandler,
+	userName,
 } from './types'
 import { bot } from './bot'
-import TelegramBot from 'node-telegram-bot-api'
+import { DB } from './db'
+import { IUser, IUserProps, User } from './User'
+import { IFetchData } from './data/types'
+import { User2Data } from './dto/User2Data'
 
 config()
 
@@ -31,7 +35,7 @@ export interface IApp {
 export class App implements IApp {
 	static exists: boolean
 	static instance: App
-	userManager: UserManager = new UserManager()
+	userManager = new UserManager()
 
 	constructor(messageHandlers: IMessageHandler[]) {
 		// Singleton pattern
@@ -39,7 +43,22 @@ export class App implements IApp {
 		App.exists = true
 		App.instance = this
 
+		this.#init()
 		this._registerEventListeners(messageHandlers)
+	}
+
+	async #init() {
+		const db = new DB()
+		const usersWithNames = (await db.getUsersWithNames()).map(
+			user => {
+				const currentUserProps: IFetchData = user
+				delete currentUserProps.id
+				delete currentUserProps.nameId
+				delete currentUserProps.name.id
+				return new User(currentUserProps)
+			},
+		)
+		return this.userManager.init(usersWithNames)
 	}
 
 	_registerEventListeners(messageHandlers: IMessageHandler[]) {
@@ -108,12 +127,16 @@ export class App implements IApp {
 					},
 				}
 
-				this.sendMessageToOwner(
+				await this.sendMessageToOwner(
 					`Пользователь ${
 						currentUser.name?.firstName || 'Аноним'
 					} завершил тест с результатом: ${result}`,
 					options,
 				)
+
+				const userDto = User2Data(currentUser)
+				if (!userDto) return
+				await new DB().createUser(userDto)
 			} else if (dataType === 'result') {
 				const data = JSON.parse(query.data) as ICallbackResult
 				await this.sendMessageToOwner(
@@ -124,15 +147,16 @@ export class App implements IApp {
 					}\nГруппа: ${currentUser.name?.group}\nРезультат: ${
 						currentUser.currentRating
 					}\nНачало прохождения теста: ${new Date(
-						currentUser.startTime,
+						currentUser.startTime!,
 					).toLocaleString(
 						'ru-RU',
 					)}\nКонец прохождения теста: ${new Date(
-						currentUser.endTime,
+						currentUser.endTime!,
 					).toLocaleString(
 						'ru-RU',
 					)}\nВремя прохождения теста: ${Math.round(
-						(currentUser.endTime - currentUser.startTime) / 1000,
+						currentUser.endTime!.getSeconds() -
+							currentUser.startTime!.getSeconds(),
 					)} с`,
 				)
 			} else {
@@ -140,7 +164,7 @@ export class App implements IApp {
 		})
 	}
 
-  registerOnEvent(
+	registerOnEvent(
 		type: keyof TelegramEvents,
 		handler: IMessageHandler,
 	) {

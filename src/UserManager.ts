@@ -1,5 +1,7 @@
+import { IFetchData, IFetchDataWithId } from './data/types'
+import { DB } from './db/index'
 import type { userId, userName } from './types/index'
-import { User } from './User'
+import { IRequiredUserProps, IUser, IUserProps, User } from './User'
 
 interface IUserManager {
 	users: { [userId: string]: User }
@@ -9,17 +11,40 @@ interface IUserManager {
 }
 
 export class UserManager implements IUserManager {
-	users: { [userId: string]: User }
+	users: { [userId: string | string]: User }
 
-	constructor() {
+	constructor(usersData: { [userId: string]: User } = {}) {
 		// Хранилище состояний пользователей
-		this.users = {}
+		this.users = usersData
+		if (Object.keys.length !== 0) return
+		this.init()
+	}
+
+	async init(users?: User[]) {
+		if (users)
+			return users.forEach(user => {
+				this.users[user.userId] = user
+			})
+		const db = new DB()
+		const usersWithNames = (await db.getUsersWithNames()).map(
+			user => {
+				const currentUser: IFetchData = user
+				delete currentUser.id
+				delete currentUser.nameId
+				delete currentUser.name.id
+				return currentUser
+			},
+		)
+		usersWithNames.map(user => {
+			const currentUser = new User(user as IUserProps)
+			this.users[user.userId] = currentUser
+		})
 	}
 
 	createUser(userId: userId, name?: userName) {
 		const currentUser = this.getUser(userId)
 		if (currentUser !== undefined) return currentUser
-		return (this.users[userId] = new User(userId, name))
+		return (this.users[userId] = new User({ userId, name }))
 	}
 
 	getUser(userId: userId) {

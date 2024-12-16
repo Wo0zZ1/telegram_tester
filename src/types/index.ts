@@ -1,6 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api'
 
-export type userId = number | string
+export type userId = number
 
 export type userName = {
 	firstName: string

@@ -4,28 +4,23 @@ import { questions, type IQuestion } from './data/types'
 import { SendMessageOptions } from 'node-telegram-bot-api'
 import { bot } from './bot'
 
-export interface IUser {
+export interface IUserProps {
 	userId: userId
-	name: userName | undefined
-	currentIndex: number
-	currentRating: number
-	verified: boolean
-	startTime: number
-	durationTime: number
-	sendMessage(
-		message: string,
-		options?: TelegramBot.SendMessageOptions,
-	): void
-	sendNextQuestion(): void
-	getCurrentQuestion(questions: IQuestion[]): IQuestion
-	incrementRating(rating: number): number
-	checkAnswer(data: ICallbackAnswer): Promise<number | undefined>
-	finishTest(): void
-	checkFIO(text: string): void
-	onMessage(msg: TelegramBot.Message): void
-	startTest(): void
-	startTest(): void
+	name?: userName
+	verified?: boolean
+	testCompleted?: boolean
+	currentIndex?: number
+	currentRating?: number
+	startTime?: Date
+	endTime?: Date
 }
+
+export type IRequiredUserProps = Required<IUserProps>
+
+export type IUser = Required<
+	Omit<IUserProps, 'name' | 'startTime' | 'endTime'>
+> &
+	Pick<IUserProps, 'name' | 'startTime' | 'endTime'>
 
 export class User implements IUser {
 	userId
@@ -36,19 +31,30 @@ export class User implements IUser {
 	currentRating
 	startTime
 	endTime
-	durationTime
 
-	// TODO Name
-	constructor(userId: userId, name?: userName) {
-		this.userId = userId
-		this.name = name
-		this.verified = false
-		this.testCompleted = false
-		this.currentIndex = 0
-		this.currentRating = 0
-		this.startTime = 0
-		this.endTime = 0
-		this.durationTime = 0
+	constructor(userData: IUserProps) {
+		this.userId = userData.userId
+		this.name = userData.name
+		this.verified = userData.verified || false
+		this.testCompleted = userData.testCompleted || false
+		this.currentIndex = userData.currentIndex || 0
+		this.currentRating = userData.currentRating || 0
+		this.startTime = userData.startTime
+		this.endTime = userData.endTime
+	}
+
+	getProps(): IRequiredUserProps | undefined {
+		if (!this.name || !this.startTime || !this.endTime) return
+		return {
+			userId: this.userId,
+			name: this.name,
+			verified: this.verified,
+			testCompleted: this.testCompleted,
+			currentIndex: this.currentIndex,
+			currentRating: this.currentRating,
+			startTime: this.startTime,
+			endTime: this.endTime,
+		}
 	}
 
 	async sendMessage(message: string, options?: SendMessageOptions) {
@@ -178,7 +184,7 @@ export class User implements IUser {
 			)
 			return this.sendNextQuestion()
 		}
-		this.startTime = Date.now()
+		this.startTime = new Date()
 		await this.sendMessage('Привет! Для начала давай познакомимся!')
 		await this.sendMessage(
 			'Введи ФИО и группу через пробел (например: Иванов Иван Иванович ИТ-21):',
@@ -186,8 +192,7 @@ export class User implements IUser {
 	}
 
 	async finishTest() {
-		this.endTime = Date.now()
-		this.durationTime = this.endTime - this.startTime
+		this.endTime = new Date()
 		await this.sendMessage(
 			`${
 				this.name!.firstName
